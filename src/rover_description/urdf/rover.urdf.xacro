@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<robot name="rover" xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <xacro:include filename="$(find rover_description)/urdf/materials.xacro"/>
+  <xacro:include filename="$(find rover_description)/urdf/rover_base.xacro"/>
+  <xacro:include filename="$(find rover_description)/urdf/wheel.xacro"/>
+  <xacro:include filename="$(find rover_description)/urdf/lidar.xacro"/>
+  <xacro:include filename="$(find rover_description)/urdf/compass.xacro"/>
+
+  <xacro:rover_base/>
+
+  <!-- Wheels: y = +/- (wheel_base / 2), z = wheel_radius (so wheel touches floor) -->
+  <xacro:wheel side="left"  x="0"  y="${ wheel_base/2}" z="${wheel_radius}"/>
+  <xacro:wheel side="right" x="0"  y="${-wheel_base/2}" z="${wheel_radius}"/>
+
+  <!-- LiDAR on top of the deck -->
+  <xacro:lidar_mount x="0" y="0" z="0.20"/>
+
+  <!-- IMU placeholder on the upper deck -->
+  <xacro:compass_mount x="0.05" y="0" z="0.07"/>
+
+</robot>

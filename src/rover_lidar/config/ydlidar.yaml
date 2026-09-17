@@ -1,0 +1,21 @@
+/**:
+  ros__parameters:
+    # /dev/rover_a3 is the symlink created by
+    # ~/rover_ws/docs/99-rover-a3-lidar.rules. Falls back to
+    # /dev/ttyUSB0 when the udev rule isn't installed (and you
+    # don't have a CP2102 ESP32 also plugged in).
+    port: /dev/rover_a3
+    frame_id: lidar_link
+    angle_min: -3.14159265
+    angle_max:  3.14159265
+    range_min:  0.12
+    range_max:  8.0
+    scan_frequency: 10
+    baudrate: 115200
+    lidar_baudrate: 115200
+    ignore_array: ""
+    resolution_type: 1
+    inverted: false
+    auto_reconnect: true
+    intensity: false
+    sample_rate: 5

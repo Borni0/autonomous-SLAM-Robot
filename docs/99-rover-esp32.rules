@@ -1,0 +1,47 @@
+# udev rules for the Autonomous Indoor Navigation Rover's ESP32.
+#
+# Install:
+#   sudo cp docs/99-rover-esp32.rules /etc/udev/rules.d/
+#   sudo cp docs/99-rover-a3-lidar.rules /etc/udev/rules.d/
+#   sudo udevadm control --reload-rules
+#   sudo udevadm trigger
+#
+# Then unplug and replug both devices. They should appear at:
+#
+#     /dev/rover_esp32      (ESP32-S3 motor controller)
+#     /dev/rover_a3         (YDLIDAR A3 2D scanner)
+#
+# with mode 0660 and group `dialout`. Add your Pi user to dialout:
+#
+#     sudo usermod -aG dialout $USER
+#
+# NOTE on VID/PID collisions: the YDLIDAR A3 ships with a CP2102 USB
+# bridge (Silicon Labs 10c4:ea60). The ESP32-S3 DevKit v1 also uses a
+# CP2102. Both would match a CP2102 rule. We therefore:
+#   1. Use the most specific match we can (ATTRS{product} when known).
+#   2. Skip CP2102 entirely here and let the YDLIDAR rule own it.
+#
+# If you own a single-board ESP32 that is *also* on CP2102 and you
+# can't tell them apart by product string, set one of them to a
+# different USB port and use the kernel-assigned path
+# (/dev/ttyUSB0 vs /dev/ttyUSB1).
+
+# ---------- ESP32-S3 native USB CDC (most DevKitC-1 variants) ------
+SUBSYSTEM=="tty", ATTRS{idVendor}=="303a", ATTRS{idProduct}=="4001", \
+    SYMLINK+="rover_esp32", MODE="0660", GROUP="dialout", TAG+="uaccess"
+
+# ESP32-S3 USB-JTAG/Serial composite (the second CDC ACM port)
+SUBSYSTEM=="tty", ATTRS{idVendor}=="303a", ATTRS{idProduct}=="1001", \
+    SYMLINK+="rover_esp32", MODE="0660", GROUP="dialout", TAG+="uaccess"
+
+# ESP32-S2 native USB CDC (older DevKitM-1)
+SUBSYSTEM=="tty", ATTRS{idVendor}=="303a", ATTRS{idProduct}=="0002", \
+    SYMLINK+="rover_esp32", MODE="0660", GROUP="dialout", TAG+="uaccess"
+
+# CH340/CH341 (WCH) - common on cheap ESP32 clones
+SUBSYSTEM=="tty", ATTRS{idVendor}=="1a86", ATTRS{idProduct}=="7523", \
+    SYMLINK+="rover_esp32", MODE="0660", GROUP="dialout", TAG+="uaccess"
+
+# FTDI FT232 (rare on ESP32 but possible)
+SUBSYSTEM=="tty", ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6001", \
+    SYMLINK+="rover_esp32", MODE="0660", GROUP="dialout", TAG+="uaccess"

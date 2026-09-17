@@ -1,0 +1,19 @@
+compass_node:
+  ros__parameters:
+    frame_id: compass_link
+    # Leave serial_port empty to publish a *synthetic* yaw that drifts at
+    # 5 deg/s. Set it to your USB-magnetometer path (e.g. /dev/ttyUSB1)
+    # to use real data.
+    serial_port: ''
+    serial_baud: 9600
+    publish_rate_hz: 20.0
+    # Local magnetic declination in degrees (positive = east).
+    # Dhaka, BD: roughly -0.5 deg. Update for your city.
+    declination_deg: -0.5
+    # Mechanical misalignment between compass mount and base_link.
+    # Measure by rotating the rover exactly 360 deg and observing
+    # /imu/yaw_deg in RViz.
+    offset_deg: 0.0
+    # Variance passed to the EKF on yaw. Lower = trust compass more.
+    covariance_orientation: 0.05
+    covariance_magnetic: 1.0e-6

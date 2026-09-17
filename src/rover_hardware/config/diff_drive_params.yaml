@@ -1,0 +1,25 @@
+esp32_bridge:
+  ros__parameters:
+    # /dev/rover_esp32 is the symlink created by
+    # ~/rover_ws/docs/99-rover-esp32.rules. Falls back to /dev/ttyUSB0
+    # when the udev rule isn't installed.
+    serial_port: /dev/rover_esp32
+    serial_baud: 115200
+    # CRITICAL: must equal ESP32 firmware's WHEEL_BASE_M and WHEEL_RADIUS_M
+    # in ~/AutonomousNavigationRobot/include/config.h.
+    wheel_base: 0.150
+    wheel_radius: 0.032
+    # percentToLinearMps(100) in firmware -> 0.30 m/s
+    v_max_mps: 0.30
+    cmd_timeout_ms: 500
+    publish_rate_hz: 20.0
+
+diff_drive_odometry:
+  ros__parameters:
+    wheel_base: 0.150
+    wheel_radius: 0.032
+    publish_tf: true
+    odom_frame: odom
+    base_frame: base_link
+    cmd_timeout_ms: 500
+    publish_rate_hz: 50.0

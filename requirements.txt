@@ -1,0 +1,14 @@
+# Python packages used by the rover_ws packages that aren't part of the
+# ROS 2 Jazzy base install. Install with:
+#
+#     pip3 install -r requirements.txt
+#
+# All the ROS 2 message classes come from ros-jazzy-* apt packages,
+# not PyPI.
+
+# Serial port access for the ESP32 bridge.
+pyserial>=3.5
+
+# Testing.
+pytest>=7.0
+pytest-cov>=4.0

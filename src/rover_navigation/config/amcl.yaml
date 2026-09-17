@@ -1,0 +1,14 @@
+amcl:
+  ros__parameters:
+    base_frame_id: "base_link"
+    odom_frame_id: "odom"
+    map_frame_id: "map"
+    use_sim_time: false
+    laser_min_range: 0.12
+    laser_max_range: 8.0
+    set_initial_pose: true
+    initial_pose:
+      x: 0.0
+      y: 0.0
+      z: 0.0
+      yaw: 0.0

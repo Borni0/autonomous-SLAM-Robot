@@ -1,0 +1,30 @@
+# udev rules for the YDLIDAR A3 2D scanner used by the rover.
+#
+# The A3 ships with a Silicon Labs CP2102/CP2104 USB-to-UART bridge
+# (VID 0x10c4, PID 0xea60) - the same VID/PID that an ESP32 DevKit
+# v1 with CP2102 also uses. To avoid a clash we match on the device's
+# product string when udev reports one; otherwise fall back to
+# VID/PID alone (acceptable when only one device is plugged in).
+#
+# Install alongside 99-rover-esp32.rules:
+#   sudo cp docs/99-rover-a3-lidar.rules /etc/udev/rules.d/
+#   sudo udevadm control --reload-rules
+#   sudo udevadm trigger
+#
+# Result: /dev/rover_a3 -> mode 0660, group dialout.
+
+# Prefer matching on the product string the A3 advertises.
+SUBSYSTEM=="tty", ATTRS{idVendor}=="10c4", ATTRS{idProduct}=="ea60", \
+    ATTRS{product}=="YDLIDAR*", \
+    SYMLINK+="rover_a3", MODE="0660", GROUP="dialout", TAG+="uaccess"
+
+# Fallback (no product string match) - only one CP210x device allowed
+# in this rule's scope. If you plug in a second CP210x the symlink
+# will silently target whichever was enumerated first.
+SUBSYSTEM=="tty", ATTRS{idVendor}=="10c4", ATTRS{idProduct}=="ea60", \
+    ENV{ID_VENDOR}=="Silicon_Labs", \
+    SYMLINK+="rover_a3", MODE="0660", GROUP="dialout", TAG+="uaccess"
+
+# Some clones ship an FTDI on the A3 instead of CP2102.
+SUBSYSTEM=="tty", ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6014", \
+    SYMLINK+="rover_a3", MODE="0660", GROUP="dialout", TAG+="uaccess"

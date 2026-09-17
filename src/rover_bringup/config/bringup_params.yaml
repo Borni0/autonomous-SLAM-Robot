@@ -1,0 +1,33 @@
+rover:
+  namespace: ""
+  base_frame: base_link
+  odom_frame: odom
+  map_frame: map
+  cmd_vel_topic: cmd_vel
+  odom_topic: odom
+
+esp32:
+  # /dev/rover_esp32 is the symlink created by
+  # ~/rover_ws/docs/99-rover-esp32.rules. Falls back to /dev/ttyUSB0
+  # when the udev rule isn't installed.
+  serial_port: /dev/rover_esp32
+  baud: 115200
+  cmd_timeout_ms: 500
+
+lidar:
+  frame_id: lidar_link
+  topic: scan
+
+ekf:
+  use_ekf: false
+
+compass:
+  # Set to true on the launch to bring up the compass node.
+  # When the serial_port inside compass/config/compass.yaml is empty,
+  # the node publishes a synthetic drifting yaw so RViz and the EKF
+  # can be exercised without magnetometer hardware.
+  use_compass: false
+
+nav:
+  params_file: $(find rover_navigation)/config/nav2_params.yaml
+  rviz_config: $(find rover_bringup)/rviz/rover.rviz
