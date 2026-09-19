@@ -8,7 +8,7 @@
   <xacro:property name="chassis_mass"   value="5.0"/>
 
   <!-- Wheel/track values mirrored in:
-         - ESP32 firmware: ~/AutonomousNavigationRobot/include/config.h
+         - ESP32 firmware: firmware/include/config.h
          - rover_hardware/config/diff_drive_params.yaml
        Keep them in sync. -->
   <xacro:property name="wheel_radius" value="0.032"/>

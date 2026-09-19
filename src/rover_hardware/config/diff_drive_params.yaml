@@ -6,20 +6,22 @@ esp32_bridge:
     serial_port: /dev/rover_esp32
     serial_baud: 115200
     # CRITICAL: must equal ESP32 firmware's WHEEL_BASE_M and WHEEL_RADIUS_M
-    # in ~/AutonomousNavigationRobot/include/config.h.
+    # in firmware/include/config.h.
     wheel_base: 0.150
     wheel_radius: 0.032
-    # percentToLinearMps(100) in firmware -> 0.30 m/s
+    # percentToLinearMps(100) in firmware -> 0.30 m/s. Same conversion the
+    # bridge uses to map /cmd_vel -> M L=... R=... percent.
     v_max_mps: 0.30
+    # If no fresh /cmd_vel arrives within cmd_timeout_ms, the bridge sends
+    # STOP (and publishes zero twist in /odom).
     cmd_timeout_ms: 500
+    # Period for re-sending the most recent M L=... R=... to the ESP32.
     publish_rate_hz: 20.0
-
-diff_drive_odometry:
-  ros__parameters:
-    wheel_base: 0.150
-    wheel_radius: 0.032
-    publish_tf: true
+    # If no P (pose) line arrives from the ESP32 within pose_stale_ms,
+    # the bridge falls back to local dead-reckoning so /odom and TF stay
+    # alive across short USB blips.
+    pose_stale_ms: 250
     odom_frame: odom
     base_frame: base_link
-    cmd_timeout_ms: 500
-    publish_rate_hz: 50.0
+    tof_frame_id: tof_link
+    battery_frame_id: base_link

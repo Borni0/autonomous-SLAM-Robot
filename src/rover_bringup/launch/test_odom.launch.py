@@ -1,9 +1,12 @@
-"""Bring up description + odometry + teleop (no ESP32, no LiDAR).
+"""Bring up description + RViz + teleop for visual /odom inspection.
 
-Use this to verify /odom and the odom->base_link TF are produced when
-you publish /cmd_vel — without involving the actual motors or wheels.
+In the Phase 4 firmware the /odom topic is published by
+``esp32_bridge`` (it parses the firmware's ``P`` lines), so a "test odom
+without the ESP32" launch doesn't really exist any more. This launch
+file is kept as a thin description + teleop + RViz check so the user
+can confirm the URDF and TF tree without plugging the ESP32 in.
 
-    ros2 topic echo /odom
+    ros2 topic list | grep odom      # empty until esp32_bridge launches
     ros2 run tf2_tools view_frames
 """
 from launch import LaunchDescription
@@ -23,16 +26,6 @@ def generate_launch_description():
         ),
     )
 
-    odom_only = Node(
-        package='rover_hardware',
-        executable='diff_drive_odometry',
-        name='diff_drive_odometry',
-        parameters=[PathJoinSubstitute([
-            FindPackageShare('rover_hardware'), 'config', 'diff_drive_params.yaml',
-        ])],
-        output='screen',
-    )
-
     teleop = Node(
         package='teleop_twist_keyboard',
         executable='teleop_twist_keyboard',
@@ -47,4 +40,4 @@ def generate_launch_description():
         arguments=['-d', PathJoinSubstitute([pkg, 'rviz', 'rover.rviz'])],
     )
 
-    return LaunchDescription([desc, odom_only, teleop, rviz])
+    return LaunchDescription([desc, teleop, rviz])

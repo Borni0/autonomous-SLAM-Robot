@@ -1,19 +1,35 @@
-# rover_ws
+# rover_ws — Autonomous Indoor Navigation Rover
 
-ROS 2 Jazzy workspace for the autonomous indoor rover.
+A single workspace containing everything you need to build and run the
+GPS-free indoor rover:
 
-* **Design / plan:** [`docs/PLAN.md`](docs/PLAN.md) — read this first.
-* **Install / build instructions for the Raspberry Pi 5:** [`BUILDING.md`](BUILDING.md).
-* **ESP32 firmware (sibling repo):** `~/AutonomousNavigationRobot/` (PlatformIO).
+* **Pi 5 / ROS 2 Jazzy software** under `src/` (SLAM, Nav2, AMCL, RViz,
+  ESP32 bridge, soft e-stop, compass).
+* **ESP32-S3 firmware** under `firmware/` (PlatformIO, BTS7960 drivers,
+  wheel encoders, MPU6050 IMU, VL53L0X ToF, OLED, battery, e-stop).
+* **Docs, udev rules, scripts, and Makefile** at the workspace root.
+
+```
+rover_ws/
+├── src/                     # ROS 2 packages (colcon build)
+├── firmware/                # ESP32-S3 PlatformIO project
+├── docs/                    # design doc, Pi 5 hardware notes, udev rules
+├── scripts/                 # CI / sanity helpers
+├── maps/                    # saved SLAM maps land here
+├── Makefile                 # make build / firmware-upload / launch-mapping / ...
+├── BUILDING.md              # full Pi 5 install + colcon recipe
+├── HARDWARE_PI5.md          # (in docs/) Pi 5 power / storage / cooling
+└── .gitignore
+```
 
 ## Target hardware
 
 * **Raspberry Pi 5** (4 GB or 8 GB) running **Ubuntu 24.04 LTS (Noble)**.
-* **ESP32-S3 DevKitC-1** running the existing firmware at `~/AutonomousNavigationRobot/`.
+* **ESP32-S3 DevKitC-1** running the firmware in `firmware/`.
 * **YDLIDAR A3** 2D LiDAR over USB.
-* **3S LiPo (11.1 V) → 5 V / 6 A buck** feeding the Pi 5's USB-C PD input.
+* **3S LiPo (11.1 V) → 5 V / 6 A buck** feeding the Pi 5's USB-C PD.
 
-## Packages
+## Packages (`src/`)
 
 | Package | Type | Purpose |
 |---|---|---|
@@ -23,48 +39,94 @@ ROS 2 Jazzy workspace for the autonomous indoor rover.
 | `rover_compass` | ament_python | Compass / magnetometer node (real or synthetic) |
 | `rover_localization` | ament_python | robot_localization EKF config + launch |
 | `rover_navigation` | ament_python | Nav2 params, AMCL, SLAM Toolbox configs |
-| `rover_bringup` | ament_python | Top-level launch orchestration + RViz config + drive helpers |
+| `rover_bringup` | ament_python | Top-level launch orchestration + RViz config |
+
+## Build & run
+
+```bash
+# 1. Install ROS 2 Jazzy and PlatformIO — see BUILDING.md
+# 2. Build the ESP32 firmware and flash it:
+make firmware-build
+make firmware-upload             # writes to /dev/ttyUSB0 by default
+# 3. Build the ROS 2 workspace:
+make install-ros-deps
+make build
+source install/setup.bash
+# 4. Sanity check:
+make check
+# 5. Launch:
+make launch-desc                 # description + RViz
+make launch-lidar                # LiDAR + /scan
+make launch-odom                 # /odom + teleop (no ESP32)
+make launch-motors               # ESP32 bridge + RViz (no odometry)
+make launch-mapping              # SLAM Toolbox online_async
+make launch-nav                  # AMCL + Nav2 (needs indoor_map.yaml)
+```
+
+`make firmware-upload` accepts a port override:
+
+```bash
+make firmware-upload FIRMWARE_PORT=/dev/ttyACM0
+```
+
+`make firmware-monitor` opens a 115200 baud serial monitor on the
+ESP32.
 
 ## udev device naming
 
-After installing `docs/99-rover-esp32.rules` and
-`docs/99-rover-a3-lidar.rules` (see `BUILDING.md` §3):
+After `make install-udev`:
 
 * `/dev/rover_esp32` — ESP32-S3 (USB CDC)
 * `/dev/rover_a3` — YDLIDAR A3
 
-These names are the defaults in `rover_lidar/config/ydlidar.yaml`,
-`rover_hardware/config/diff_drive_params.yaml`, and the launch files.
+These are the defaults in `src/rover_lidar/config/ydlidar.yaml` and
+`src/rover_hardware/config/diff_drive_params.yaml`.
 
-## Three modes
+## Three launch modes
 
 ```bash
 ros2 launch rover_bringup rover.launch.py mode:=just_description
 ros2 launch rover_bringup rover.launch.py mode:=mapping
 ros2 launch rover_bringup rover.launch.py mode:=navigation \
     world:=/home/$USER/rover_ws/maps/indoor_map.yaml
+ros2 launch rover_bringup rover.launch.py mode:=both
+    # ESP32 bridge + RViz only; no SLAM, no Nav2. Useful for bench-
+    # testing motors and encoders against live hardware.
 ```
 
-Add `use_compass:=true` or `use_ekf:=true` to optionally bring up the
-compass or the EKF.
+Add `use_compass:=true` or `use_ekf:=true` to optionally bring up
+the compass or the EKF.
 
-## Quick tests before full bringup
+## /cmd_vel chain (Nav2 -> ESP32)
 
-```bash
-ros2 launch rover_bringup test_lidar.launch.py        # LiDAR alone
-ros2 launch rover_bringup test_odom.launch.py         # /odom + teleop
-ros2 launch rover_bringup test_motors.launch.py       # ESP32 alone
+`ros2 launch rover_bringup rover.launch.py mode:=navigation` wires
+Nav2's output all the way to the wheels:
+
+```
+Nav2 controller_server
+    |
+    v
+velocity_smoother (publishes /cmd_vel_nav)
+    |
+    v
+soft_estop       (subscribes /cmd_vel_in, publishes /cmd_vel_out)
+    |
+    v
+esp32_bridge     (subscribes /cmd_vel, sends M L=... R=... to ESP32)
+    |
+    v
+BTS7960 motors
 ```
 
-Or use the top-level Makefile:
+The chain is connected in `src/rover_bringup/launch/rover.launch.py`
+via two launch-time remappings: Nav2's smoother output is remapped
+onto `/cmd_vel_in`, and the ESP32 bridge subscribes `/cmd_vel_out`.
+
+To halt the rover from the keyboard:
 
 ```bash
-make build             # colcon build --symlink-install
-make run-unit          # pure-Python unit tests (no ROS needed)
-make launch-mapping    # SLAM Toolbox online_async + teleop
-make launch-nav        # AMCL + Nav2 (needs ~/rover_ws/maps/indoor_map.yaml)
-make launch-desc       # description-only smoke test
-make install-udev      # copy docs/*.rules to /etc/udev/rules.d/
+ros2 run rover_hardware estop_cli stop       # freeze (zero /cmd_vel_out)
+ros2 run rover_hardware estop_cli release    # resume
 ```
 
 ## Soft e-stop
@@ -77,8 +139,12 @@ ros2 run rover_hardware estop_cli release    # resume
 ## CI / pre-build sanity
 
 ```bash
-./scripts/ci_check.sh
+./scripts/ci_check.sh          # py_compile + unit tests + YAML
+./scripts/bringup_check.sh     # post-colcon-build verification
 ```
 
-Runs `py_compile` over every Python file, every pure-Python unit test,
-and parses every YAML config. Safe to run before `colcon build`.
+## Indoor mapping
+
+See [`docs/MAPPING.md`](docs/MAPPING.md) for the step-by-step procedure
+to generate a 2D occupancy grid (`indoor_map.pgm`/`indoor_map.yaml`)
+that AMCL/Nav2 can localise against.

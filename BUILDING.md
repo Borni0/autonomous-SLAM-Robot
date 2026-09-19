@@ -119,10 +119,13 @@ lsusb
 
 ## 4. Drop the workspace in
 
+The workspace is a single folder containing both the ROS 2 source
+tree (`src/`) and the ESP32 firmware (`firmware/`).
+
 From your workstation:
 
 ```bash
-scp -r /home/borni/rover_ws borni@<pi-ip>:~/
+scp -r /home/borni/rover_ws ubuntu@<pi-ip>:~/
 ```
 
 (Or `git clone` if you've pushed the tree to a remote.)
@@ -143,9 +146,17 @@ cd ~/rover_ws
 cd ~/rover_ws
 sudo rosdep install -y --from-paths src --ignore-src --rosdistro=jazzy
 source /opt/ros/jazzy/setup.bash
-colcon build --symlink-install
+make build              # colcon build --symlink-install
 source install/setup.bash
 echo "source ~/rover_ws/install/setup.bash" >> ~/.bashrc
+```
+
+Or use the Makefile directly:
+
+```bash
+make install-ros-deps
+make build
+source install/setup.bash
 ```
 
 Expected packages in `ros2 pkg list | grep rover`:
@@ -166,13 +177,14 @@ rover_navigation
 
 | Step | Command | What you should see |
 |---|---|---|
-| 6.1 | `ros2 launch rover_bringup rover.launch.py mode:=just_description` | RViz with robot model + TF arrows for base_link, lidar_link, compass_link, wheel_*_link |
-| 6.2 | `ros2 launch rover_bringup test_lidar.launch.py` + `ros2 topic echo /scan --once` | LaserScan message with non-empty ranges |
-| 6.3 | `ros2 launch rover_bringup test_odom.launch.py` + drive (wheels lifted) | `/odom` updates; `tf2_tools view_frames` shows `odom → base_link` |
-| 6.4 | `ros2 launch rover_bringup test_motors.launch.py` then `source ~/rover_ws/src/rover_bringup/scripts/drive_once.sh && drive_once 0.1` | Wheels spin for one tick; `esp32_bridge` logs `[esp32] MANUAL L=… R=…` |
-| 6.5 | `ros2 launch rover_bringup rover.launch.py mode:=mapping` + teleop | `/map` builds |
+| 6.0 | `make firmware-build && make firmware-upload` | PlatformIO compiles the ESP32 firmware and flashes it via USB |
+| 6.1 | `make launch-desc` (or `ros2 launch rover_bringup rover.launch.py mode:=just_description`) | RViz with robot model + TF arrows for base_link, lidar_link, compass_link, wheel_*_link |
+| 6.2 | `make launch-lidar` + `ros2 topic echo /scan --once` | LaserScan message with non-empty ranges |
+| 6.3 | `make launch-odom` + drive (wheels lifted) | `/odom` updates; `tf2_tools view_frames` shows `odom → base_link` |
+| 6.4 | `make launch-motors` then `source ~/rover_ws/src/rover_bringup/scripts/drive_once.sh && drive_once 0.1` | Wheels spin for one tick; `esp32_bridge` logs `[esp32] MANUAL L=… R=…` |
+| 6.5 | `make launch-mapping` + teleop | `/map` builds |
 | 6.6 | `ros2 run nav2_map_server map_saver_cli -f ~/rover_ws/maps/indoor_map` | `indoor_map.yaml` + `indoor_map.pgm` written |
-| 6.7 | `ros2 launch rover_bringup rover.launch.py mode:=navigation world:=/home/$USER/rover_ws/maps/indoor_map.yaml` | RViz "2D Pose Estimate" then "Nav2 Goal" makes the rover drive |
+| 6.7 | `make launch-nav` (or `ros2 launch rover_bringup rover.launch.py mode:=navigation world:=/home/$USER/rover_ws/maps/indoor_map.yaml`) | RViz "2D Pose Estimate" then "Nav2 Goal" makes the rover drive |
 
 Soft e-stop works anywhere in this flow:
 

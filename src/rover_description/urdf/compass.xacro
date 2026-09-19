@@ -1,8 +1,10 @@
 <?xml version="1.0"?>
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro">
 
-  <!-- Placeholder for the MPU6050 IMU mount. The IMU is currently
-       on-device (ESP32 I2C) and not streamed over serial. -->
+  <!-- Standalone magnetometer (HMC5883L / QMC5883L USB stick). Mounted
+       as far as practical from the BTS7960s and the battery to reduce
+       magnetic interference. The rover_compass package reads heading
+       from its serial port and publishes /imu/data + /imu/mag. -->
 
   <xacro:macro name="compass_mount" params="x y z">
     <link name="compass_link">

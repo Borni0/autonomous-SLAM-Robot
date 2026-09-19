@@ -26,15 +26,9 @@ def generate_launch_description():
         ),
     )
 
-    # ESP32 bridge only — diff_drive_odometry is intentionally omitted.
-    hw = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(
-            PathJoinSubstitute([FindPackageShare('rover_hardware'), 'launch', 'hardware.launch.py'])
-        ),
-        # Skip the odometry node by pointing hardware.launch.py at a mode
-        # that only includes the bridge; the simplest way is to launch
-        # esp32_bridge directly here:
-    )
+    # ESP32 bridge only — /odom and odom->base_link are now published by
+    # the bridge itself, so a separate diff_drive_odometry node is no
+    # longer launched.
     bridge = Node(
         package='rover_hardware',
         executable='esp32_bridge',

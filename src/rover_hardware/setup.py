@@ -19,13 +19,12 @@ setup(
     zip_safe=True,
     maintainer='Rover Maintainer',
     maintainer_email='dev@example.com',
-    description='ESP32 serial bridge + dead-reckoning odometry for the rover.',
+    description='ESP32 serial bridge for the rover (transparent driver for ROS 2).',
     license='Apache-2.0',
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
             'esp32_bridge        = rover_hardware.esp32_bridge:main',
-            'diff_drive_odometry = rover_hardware.diff_drive_odometry:main',
             'soft_estop          = rover_hardware.soft_estop:main',
             'estop_cli           = rover_hardware.estop_cli:main',
         ],

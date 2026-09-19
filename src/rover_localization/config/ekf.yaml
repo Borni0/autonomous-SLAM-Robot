@@ -19,16 +19,5 @@ ekf_filter_node:
                    false, false, false]
     odom0_differential: false
     odom0_relative: false
-
-    # IMU is currently not streamed by the ESP32 firmware. To enable
-    # fusion, publish sensor_msgs/Imu on /imu_data, then uncomment:
-    #
-    #   imu0: /imu_data
-    #   imu0_config: [false, false, false,
-    #                 false, false, true,        # yaw from fused orientation
-    #                 false, false, false,
-    #                 false, false, false,
-    #                 false, false, false]
-    #   imu0_differential: false
-    #   imu0_relative: false
-    #   imu0_remove_gravitational_acceleration: true
+    # No IMU: the ESP32 firmware no longer carries the MPU6050. Heading
+    # comes from wheel odometry only; AMCL corrects it from the A3 scan.

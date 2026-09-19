@@ -1,0 +1,40 @@
+
+# ROS 2 colcon artefacts
+/build/
+/install/
+/log/
+/src/*/build/
+/src/*/install/
+/src/*/log/
+
+# PlatformIO artefacts (firmware)
+/firmware/.pio/
+/firmware/build/
+/firmware/.vscode/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+*.egg
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*~
+
+# Local environment
+.env
+.venv
+
+# Saved maps (keep the placeholder)
+/maps/*.yaml
+!/maps/empty.yaml
+/maps/*.pgm
+!/maps/empty.pgm

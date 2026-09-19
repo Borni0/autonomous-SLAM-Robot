@@ -8,7 +8,7 @@
 #
 # Requires:
 #   * ros2 environment sourced
-#   * esp32_bridge + diff_drive_odometry running
+#   * esp32_bridge running (it publishes /odom + TF by itself)
 #   * /cmd_vel unmuted by soft_estop (estop_cli release)
 #
 # Always verify the robot is lifted or otherwise safe before calling.

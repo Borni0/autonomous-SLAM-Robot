@@ -6,6 +6,20 @@ Usage:
     ros2 launch rover_bringup rover.launch.py mode:=navigation
     ros2 launch rover_bringup rover.launch.py mode:=navigation \
         world:=/home/<user>/rover_ws/maps/indoor_map.yaml
+    ros2 launch rover_bringup rover.launch.py mode:=both
+        # ESP32 bridge + RViz, no SLAM/Nav2. Useful for bench-testing
+        # motors, encoders, and the soft e-stop against live hardware.
+
+The /cmd_vel chain (Nav2 -> motors):
+
+    Nav2 controller_server
+      -> velocity_smoother (publishes /cmd_vel_nav)
+      -> soft_estop       (subscribes /cmd_vel_in, publishes /cmd_vel_out)
+      -> esp32_bridge     (subscribes /cmd_vel, sends M L=... R=...)
+
+The remappings below connect the loose ends. See
+``src/rover_hardware/rover_hardware/soft_estop.py`` for the canonical
+wiring diagram.
 """
 from launch import LaunchDescription
 from launch.actions import (
@@ -31,7 +45,7 @@ def generate_launch_description():
     mode_arg = DeclareLaunchArgument(
         'mode',
         default_value='just_description',
-        choices=['just_description', 'mapping', 'navigation'],
+        choices=['just_description', 'mapping', 'navigation', 'both'],
     )
     serial_port_arg = DeclareLaunchArgument(
         'serial_port', default_value='/dev/rover_esp32',
@@ -85,27 +99,40 @@ def generate_launch_description():
     )
 
     # ---- 3. ESP32 bridge + odometry ----
-    hardware_launch = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(
-            PathJoinSubstitute([FindPackageShare('rover_hardware'), 'launch', 'hardware.launch.py'])
+    # Gated off in `mapping` so SLAM Toolbox is the sole source of
+    # odom->base_link; allowed in `navigation` (AMCL owns map->odom) and
+    # `both` (bench-testing the ESP32 without Nav2). cmd_vel_remap wires
+    # the bridge onto the soft e-stop's safe output below.
+    hardware_launch = GroupAction([
+        IncludeLaunchDescription(
+            PythonLaunchDescriptionSource(
+                PathJoinSubstitute([FindPackageShare('rover_hardware'),
+                                    'launch', 'hardware.launch.py'])
+            ),
+            launch_arguments={
+                'serial_port': serial_port,
+                'serial_baud': serial_baud,
+                'cmd_vel_remap': '/cmd_vel_out',
+            }.items(),
         ),
-        launch_arguments={
-            'serial_port': serial_port,
-            'serial_baud': serial_baud,
-        }.items(),
-    )
+    ], condition=IfCondition([
+        EqualsSubstitution(mode, 'navigation'),
+        EqualsSubstitution(mode, 'both'),
+    ]))
 
     # ---- 3b. Soft e-stop gate ----
-    # Nav2's controller_server publishes /cmd_vel_nav. The velocity
-    # smoother publishes on /cmd_vel by default; we point it at
-    # /cmd_vel_in instead, the soft e-stop republishes on /cmd_vel_out,
-    # and the ESP32 bridge subscribes /cmd_vel. Engage with:
+    # Nav2's velocity_smoother publishes /cmd_vel_nav (see
+    # rover_navigation/config/nav2_params.yaml). We remap the gate's
+    # input onto /cmd_vel_nav so the smoother's output flows into the
+    # gate, and remap the ESP32 bridge's input onto /cmd_vel_out so the
+    # gate's safe output reaches the motors. Engage with:
     #   ros2 run rover_hardware estop_cli stop
     soft_estop = Node(
         package='rover_hardware',
         executable='soft_estop',
         name='soft_estop',
         parameters=[{'latched': True}],
+        remappings=[('cmd_vel_in', '/cmd_vel_nav')],
         output='screen',
     )
 

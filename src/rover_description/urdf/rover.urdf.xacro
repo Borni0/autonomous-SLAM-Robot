@@ -16,7 +16,7 @@
   <!-- LiDAR on top of the deck -->
   <xacro:lidar_mount x="0" y="0" z="0.20"/>
 
-  <!-- IMU placeholder on the upper deck -->
+  <!-- Compass / magnetometer mount on the upper deck -->
   <xacro:compass_mount x="0.05" y="0" z="0.07"/>
 
 </robot>

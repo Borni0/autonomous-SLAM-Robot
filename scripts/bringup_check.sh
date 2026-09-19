@@ -9,8 +9,7 @@
 #   4. Every .yaml file is well-formed.
 #   5. The default empty map exists and is readable.
 #   6. The expected console scripts are registered
-#      (esp32_bridge, diff_drive_odometry, soft_estop, estop_cli,
-#       compass_node).
+#      (esp32_bridge, soft_estop, estop_cli, compass_node).
 #   7. The /dev/rover_esp32 and /dev/rover_a3 symlinks exist (warn
 #      rather than fail if not, since they require the udev rule to
 #      be installed and the devices plugged in).
@@ -93,7 +92,7 @@ fi
 
 echo
 echo "==> 6. Console scripts registered"
-for script in esp32_bridge diff_drive_odometry soft_estop estop_cli compass_node; do
+for script in esp32_bridge soft_estop estop_cli compass_node; do
     if ros2 run rover_hardware "$script" --help >/dev/null 2>&1 || \
        ros2 pkg executables rover_hardware 2>/dev/null | grep -q "$script" || \
        ros2 pkg executables rover_compass 2>/dev/null | grep -q "$script"; then
